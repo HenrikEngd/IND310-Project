@@ -1,6 +1,13 @@
 import streamlit as st
-import yfinance as yf
+from typing import List, Tuple
 import pandas as pd
+try:
+    import yfinance as yf
+except Exception as e:
+    # Raise a clear error so Streamlit shows an actionable message
+    raise RuntimeError(
+        "Missing dependency 'yfinance'. Make sure it's installed (requirements.txt) or run: pip install yfinance"
+    ) from e
 
 # Defaults used across pages
 DEFAULT_TICKERS = ["EQNR.OL", "DNB.OL", "AKRBP.OL", "ORK.OL", "MOWI.OL"]
@@ -10,10 +17,10 @@ DEFAULT_END = "2025-10-15"
 
 @st.cache_data(show_spinner="Downloading market data...", ttl=60 * 60 * 6)
 def load_market_data(
-    tickers: list[str] = DEFAULT_TICKERS,
+    tickers: List[str] = DEFAULT_TICKERS,
     start: str = DEFAULT_START,
     end: str = DEFAULT_END,
-):
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Download and cache market data for the given tickers and date range.
 
