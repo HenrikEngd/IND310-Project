@@ -7,6 +7,10 @@ st.title("Data Exploration Page")
 # Load cached data shared across pages
 _, close_df, returns_df = load_market_data(tickers=DEFAULT_TICKERS)
 
+st.caption(
+	f"Available tickers: {', '.join(close_df.columns)} | Rows: {len(close_df):,}"
+)
+
 st.subheader("Close Prices (preview)")
 st.dataframe(close_df.tail(), use_container_width=True)
 

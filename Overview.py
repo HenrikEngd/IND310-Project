@@ -20,11 +20,17 @@ color_map = {
     "MOWI.OL": "#c180ff",
 }
 
-# Multi-select for tickers
+# Determine which tickers are actually available in the data
+available_tickers = [t for t in tickers if t in all_close_data.columns]
+if not available_tickers:
+    st.error("No ticker data available. Try refreshing or adjusting the date range.")
+    st.stop()
+
+# Multi-select for tickers (limit to available ones)
 selected_tickers = st.multiselect(
     "Select ticker symbols to display:",
-    tickers,
-    default=tickers,  # All selected by default
+    available_tickers,
+    default=available_tickers,  # All available selected by default
 )
 
 
