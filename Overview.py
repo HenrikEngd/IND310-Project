@@ -1,22 +1,15 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
 import altair as alt
+from data_cache import load_market_data, DEFAULT_TICKERS
 
-tickers = ["EQNR.OL", "DNB.OL", "AKRBP.OL", "ORK.OL", "MOWI.OL"]
-data = yf.download(tickers, start="2020-10-15", end="2025-10-15")
+tickers = DEFAULT_TICKERS
+data, all_close_data, returns = load_market_data(tickers=tickers)
 
 st.title("IND310 Project")
 st.write(
     "This application allows you to view historical stock prices for selected companies."
 )
-
-# Prepare close data
-all_close_data = data["Close"].copy()
-all_close_data.columns = tickers  # Rename columns to just ticker names
-
-# Calculate daily returns for each ticker
-returns = all_close_data.pct_change().dropna()
 
 # Define consistent colors for each ticker
 color_map = {
