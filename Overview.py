@@ -78,9 +78,6 @@ if selected_tickers:
     # Visualize beta comparison
     st.subheader("Beta Comparison")
     
-    # Debug: show actual beta values
-    st.write("Debug - Beta values:", betas)
-    
     beta_df = pd.DataFrame(
         [
             {
@@ -91,7 +88,7 @@ if selected_tickers:
         ]
     )
     
-    st.write("Debug - Beta DataFrame:", beta_df)
+    st.write("Beta DataFrame:", beta_df)
 
     # Create bar chart with better y-axis scaling
     min_beta = beta_df['Beta'].min()
