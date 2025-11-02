@@ -4,7 +4,7 @@ import altair as alt
 from data_cache import load_market_data, DEFAULT_TICKERS
 
 tickers = DEFAULT_TICKERS
-data, all_close_data, returns = load_market_data(tickers=tickers)
+data, all_close_data, returns, betas = load_market_data(tickers=tickers)
 
 st.title("IND310 Project")
 st.write(
@@ -53,21 +53,20 @@ if selected_tickers:
         )
 
     # Calculate and display risk metrics
-    st.subheader("Risk Analysis (Standard Deviation)")
+    st.subheader("Risk Metrics")
     st.write(
-        "Standard deviation of daily returns measures volatility/risk. Higher values indicate more risk."
+        "Standard deviation measures volatility/risk. Beta measures correlation with the market (OSEBX). Beta > 1 = more volatile than market, Beta < 1 = less volatile."
     )
 
-    # Calculate standard deviation for selected tickers
+    # Calculate standard deviation and beta for selected tickers
     risk_data = []
     for ticker in selected_tickers:
         daily_std = returns[ticker].std()
-        annual_std = daily_std * (
-            252**0.5
-        )  # Annualized standard deviation (252 trading days)
+        annual_std = daily_std * (252**0.5)
         risk_data.append(
             {
                 "Ticker": ticker,
+                "Beta": f"{betas[ticker]:.2f}",
                 "Daily Std Dev (%)": f"{daily_std * 100:.4f}",
                 "Annual Std Dev (%)": f"{annual_std * 100:.2f}",
             }
@@ -75,6 +74,56 @@ if selected_tickers:
 
     risk_df = pd.DataFrame(risk_data)
     st.dataframe(risk_df, hide_index=True)
+
+    # Visualize beta comparison
+    st.subheader("Beta Comparison")
+    
+    # Debug: show actual beta values
+    st.write("Debug - Beta values:", betas)
+    
+    beta_df = pd.DataFrame(
+        [
+            {
+                "Ticker": ticker,
+                "Beta": betas[ticker],
+            }
+            for ticker in selected_tickers
+        ]
+    )
+    
+    st.write("Debug - Beta DataFrame:", beta_df)
+
+    # Create bar chart with better y-axis scaling
+    min_beta = beta_df['Beta'].min()
+    max_beta = beta_df['Beta'].max()
+    y_min = min(0, min_beta - 0.2)
+    y_max = max(1.5, max_beta + 0.2)
+    
+    beta_chart = (
+        alt.Chart(beta_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("Ticker:N", sort=selected_tickers, title=None),
+            y=alt.Y("Beta:Q", title="Beta (vs OSEBX)", scale=alt.Scale(domain=[y_min, y_max])),
+            color=alt.Color(
+                "Ticker:N",
+                scale=alt.Scale(
+                    domain=selected_tickers,
+                    range=[color_map[t] for t in selected_tickers],
+                ),
+                legend=None,
+            ),
+            tooltip=['Ticker:N', alt.Tooltip('Beta:Q', format='.3f')]
+        )
+        .properties(height=300)
+    )
+    
+    # Add reference line at beta = 1
+    reference_line = alt.Chart(pd.DataFrame({'y': [1]})).mark_rule(strokeDash=[5, 5], color='gray').encode(y='y:Q')
+    
+    combined_chart = (beta_chart + reference_line).properties(height=300)
+
+    st.altair_chart(combined_chart, use_container_width=True)
 
     # Visualize risk comparison
     st.subheader("Annualized Standard Deviation Comparison")
@@ -104,6 +153,7 @@ if selected_tickers:
                 ),
                 legend=None,
             ),
+            tooltip=['Ticker:N', 'Annual Std Dev (%):Q']
         )
         .properties(height=300)
     )
