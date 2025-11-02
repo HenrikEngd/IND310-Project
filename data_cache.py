@@ -18,12 +18,19 @@ def load_market_data(
     data = {}
     for ticker in tickers:
         ticker_data = yf.Ticker(ticker).history(start=start, end=end, actions=True, auto_adjust=False)
-        ticker_data.index = ticker_data.index.tz_localize(None)  # Remove timezone
-        data[ticker] = ticker_data
-        
-    # Download market index for beta calculation - use OSEBX (Oslo Stock Exchange)
+        if not ticker_data.empty:
+            ticker_data.index = ticker_data.index.tz_localize(None)
+            data[ticker] = ticker_data
+    
+    if not data:
+        raise ValueError("No ticker data could be downloaded")
+    
+    # Download market index
     market_data = yf.Ticker("OSEBX.OL").history(start=start, end=end)
-    market_data.index = market_data.index.tz_localize(None)  # Remove timezone
+    market_returns = None
+    if not market_data.empty:
+        market_data.index = market_data.index.tz_localize(None)
+        market_returns = market_data['Close'].pct_change().dropna()
     
     data = pd.concat(data, axis=1)
     close_data = data.xs('Close', level=1, axis=1)
@@ -32,13 +39,14 @@ def load_market_data(
     
     adj_close_data = formulas.adjusted_close_price(close_data, dividends_data, splits_data)
     returns = formulas.returns(adj_close_data)
-    market_returns = market_data['Close'].pct_change().dropna()
-
-    # Calculate beta for each ticker
+    
     betas = {}
     for ticker in tickers:
-        betas[ticker] = formulas.beta(returns[ticker], market_returns)
-
+        if ticker in returns.columns and market_returns is not None:
+            betas[ticker] = formulas.beta(returns[ticker], market_returns)
+        else:
+            betas[ticker] = 0.0
+    
     return data, adj_close_data, returns, betas
 
 
