@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import statsmodels.api as sm
+import altair as alt
 from data_cache import load_market_data
 
 # Hent data fra cache
@@ -42,6 +43,62 @@ for col in returns_df.columns:
 
 # Vis resultater for hver aksje
 st.title("Fama-French Three-Factor Model Results")
+
+# Create summary data for charts
+r_squared_data = []
+all_coefficients = []
+
+for ticker, model in results.items():
+    r_squared_data.append({
+        'Ticker': ticker,
+        'R²': model.rsquared
+    })
+    
+    for i, factor in enumerate(['Intercept (α)', 'Market-Rf (β)', 'SMB', 'HML']):
+        all_coefficients.append({
+            'Ticker': ticker,
+            'Factor': factor,
+            'Coefficient': model.params.values[i]
+        })
+
+# R² Bar Chart
+st.header("R² Comparison Across Stocks")
+r2_df = pd.DataFrame(r_squared_data)
+r2_chart = alt.Chart(r2_df).mark_bar().encode(
+    x=alt.X('Ticker:N', title='Stock Ticker'),
+    y=alt.Y('R²:Q', title='R² Value', scale=alt.Scale(domain=[0, 1])),
+    color=alt.Color('R²:Q', scale=alt.Scale(scheme='blues'), legend=None),
+    tooltip=['Ticker', alt.Tooltip('R²:Q', format='.4f')]
+).properties(
+    height=400
+)
+st.altair_chart(r2_chart, use_container_width=True)
+
+# Coefficients Grouped Bar Chart
+st.header("Factor Coefficients Comparison")
+
+# Filter to exclude Intercept for cleaner visualization (optional)
+coef_df_chart = pd.DataFrame(all_coefficients)
+coef_df_chart = coef_df_chart[coef_df_chart['Factor'] != 'Intercept (α)']
+
+coef_chart = alt.Chart(coef_df_chart).mark_bar().encode(
+    x=alt.X('Ticker:N', title='Stock Ticker', axis=alt.Axis(labelAngle=0)),
+    y=alt.Y('Coefficient:Q', title='Coefficient Value'),
+    color=alt.Color('Factor:N', 
+                    scale=alt.Scale(scheme='category10'),
+                    legend=alt.Legend(title='Factor')),
+    xOffset='Factor:N',
+    tooltip=['Ticker', 'Factor', alt.Tooltip('Coefficient:Q', format='.6f')]
+).properties(
+    height=400
+)
+
+st.altair_chart(coef_chart, use_container_width=True)
+
+st.divider()
+
+# Detailed results for each stock
+st.header("Detailed Regression Results")
 
 for ticker, model in results.items():
     st.subheader(f"{ticker}")
