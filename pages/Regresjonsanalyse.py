@@ -65,14 +65,11 @@ for ticker, model in results.items():
     })
     
     # Formater numeriske kolonner
-    st.dataframe(
-        coef_df.style.format({
-            'Coefficient': '{:.6f}',
-            'Std Error': '{:.6f}',
-            't-value': '{:.3f}',
-            'p-value': '{:.4f}'
-        }).background_gradient(subset=['p-value'], cmap='RdYlGn_r', vmin=0, vmax=0.1),
-        use_container_width=True
-    )
+    coef_df['Coefficient'] = coef_df['Coefficient'].apply(lambda x: f"{x:.6f}")
+    coef_df['Std Error'] = coef_df['Std Error'].apply(lambda x: f"{x:.6f}")
+    coef_df['t-value'] = coef_df['t-value'].apply(lambda x: f"{x:.3f}")
+    coef_df['p-value'] = coef_df['p-value'].apply(lambda x: f"{x:.4f}")
+    
+    st.dataframe(coef_df, use_container_width=True)
     
     st.divider()
