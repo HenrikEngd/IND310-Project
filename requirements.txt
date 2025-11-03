@@ -4,3 +4,4 @@ pandas
 altair
 statsmodels
 matplotlib
+numpy
